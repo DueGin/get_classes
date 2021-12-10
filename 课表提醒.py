@@ -4,17 +4,19 @@ from selenium import webdriver
 #时间包
 from time import sleep
 #Edge浏览器包
-from msedge.selenium_tools import  Edge,EdgeOptions
-#谷歌无头浏览器包
+from msedge.selenium_tools import Edge,EdgeOptions
+#谷歌浏览器无头浏览器包
 #from selenium.webdriver.chrome.options import Options
-#死蓝鸟规避检测包
-from selenium.webdriver import ChromeOptions
+#谷歌浏览器规避检测包
+#from selenium.webdriver import ChromeOptions
 #死蓝鸟动作链包
 from selenium.webdriver import ActionChains
 #动作链键盘包
 from selenium.webdriver.common.keys import Keys
 #时间包
 import datetime
+#超级鹰识别验证码包
+from chaojiying import Chaojiying_Client
 class Spider:
     def __init__(self,username,password):
         self.u = username
@@ -24,6 +26,16 @@ class Spider:
     def login(self):
         self.username.send_keys(self.u)
         self.password.send_keys(self.p)
+        code_img_ele=self.bro.find_element_by_css_selector("#SafeCodeImg")
+        # 保存验证码图片
+        code_img_ele.screenshot('code_img.png')
+        # 将验证码图片上传到超级鹰
+        chaojiying = Chaojiying_Client(账号, 密码, 超级鹰ID)
+        im = open('code_img.png', 'rb').read()
+        code = chaojiying.PostPic(im, 1902)['pic_str']
+        #print(code)
+        # 输入验证码
+        self.code.send_keys(code)
         #回车
         ActionChains(self.bro).send_keys(Keys.ENTER).perform()
 
@@ -46,7 +58,7 @@ class Spider:
         # 获取周次
         self.week_num = int(datetime.datetime.now().isocalendar()[1] - datetime.datetime(2021, 8, 23).isocalendar()[1] + 1)
         print('周次：', self.week_num)
-        # 获取星期
+        # 获取星期几
         self.week_day = datetime.datetime.now().isocalendar()[2]
         print('星期：', self.week_day)
         print('----------------------------')
@@ -117,12 +129,13 @@ class Spider:
     def menu(self):
         while True:
             print('''
-            1.上午课表
-            2.下午课表
-            3.晚上课表
-            4.今天课表
-            5.明天课表
-            6.  退出
+            0.    退出
+            1.  上午课表
+            2.  下午课表
+            3.  晚上课表
+            4.  今天课表
+            5.  明天课表
+            6.按星期查课表
             ''')
             choise = input('请选择序号：')
             print()
@@ -134,14 +147,12 @@ class Spider:
                 else:
                     print('上午的课表：')
                     for j in range(0, 2):
-                        if self.end_all_classes[self.week_day - 1][j] == None:
+                        #今天早上的课表信息
+                        a = self.end_all_classes[self.week_day - 1][j]
+                        if a == None:
                             continue
-                        print('课程：' + self.end_all_classes[self.week_day - 1][j][0])
-                        print('时间：' + self.end_all_classes[self.week_day - 1][j][1])
-                        print('地点：' + self.end_all_classes[self.week_day - 1][j][2])
-                        print('周次：' + self.end_all_classes[self.week_day - 1][j][3])
-                        print('星期：' + self.end_all_classes[self.week_day - 1][j][4])
-                        print('    --------------------')
+                        # 打印课表
+                        self.print_classes(a)
                 print('----------------------------')
                 sleep(1)
             # 下午课表
@@ -151,14 +162,12 @@ class Spider:
                 else:
                     print('下午的课表：')
                     for j in range(2, 4):
-                        if self.end_all_classes[self.week_day - 1][j] == None:
+                        #今天下午的课表信息
+                        a = self.end_all_classes[self.week_day - 1][j]
+                        if a == None:
                             continue
-                        print('课程：' + self.end_all_classes[self.week_day - 1][j][0])
-                        print('时间：' + self.end_all_classes[self.week_day - 1][j][1])
-                        print('地点：' + self.end_all_classes[self.week_day - 1][j][2])
-                        print('周次：' + self.end_all_classes[self.week_day - 1][j][3])
-                        print('星期：' + self.end_all_classes[self.week_day - 1][j][4])
-                        print('    --------------------')
+                        # 打印课表
+                        self.print_classes(a)
                 print('----------------------------')
                 sleep(1)
             # 晚上课表
@@ -167,55 +176,87 @@ class Spider:
                     print('晚上没课！')
                 else:
                     print('晚上的课表：')
-                    print('课程：' + self.end_all_classes[self.week_day - 1][4][0])
-                    print('时间：' + self.end_all_classes[self.week_day - 1][4][1])
-                    print('地点：' + self.end_all_classes[self.week_day - 1][4][2])
-                    print('周次：' + self.end_all_classes[self.week_day - 1][4][3])
-                    print('星期：' + self.end_all_classes[self.week_day - 1][4][4])
+                    #今天晚上的课表信息
+                    a = self.end_all_classes[self.week_day - 1][4]
+                    if a == None:
+                        continue
+                    #打印课表
+                    self.choose_classes(a)
                 print('----------------------------')
                 sleep(1)
             # 今天的课表
             elif choise == '4':
-                num = 0
-                for i in self.end_all_classes[self.week_day - 1]:
-                    if i == None:
-                        num += 1
-                        if num == 5:
-                            print('今天没课！')
-                        continue
-                    print('今天的课表：')
-                    print('课程：' + i[0])
-                    print('时间：' + i[1])
-                    print('地点：' + i[2])
-                    print('周次：' + i[3])
-                    print('星期：' + i[4])
-
-                    print('    --------------------')
+                # 处理并打印课表
+                self.day_classes(self.week_day)
                 print('----------------------------')
                 sleep(1)
+
+            #明天的课表
             elif choise == '5':
-                t_num = 0
-                for i in self.end_all_classes[self.week_day]:
-                    if i == None:
-                        t_num += 1
-                        if t_num == 5:
-                            print('明天没课！')
-                        continue
-                        print('明天的课表：')
-                        print('课程：' + i[0])
-                        print('时间：' + i[1])
-                        print('地点：' + i[2])
-                        print('周次：' + i[3])
-                        print('星期：' + i[4])
-
-                    print('    --------------------')
+                #处理并打印课表
+                self.day_classes(self.week_day+1)
                 print('----------------------------')
                 sleep(1)
+
+            #按星期查课表
             elif choise == '6':
+                c = input('想查星期几的课表：')
+                if int(c)>7 and int(c)<1:
+                    print('输入有误！')
+                #换行
+                print()
+                #处理并打印课表
+                self.day_classes(int(c))
+                print('----------------------------')
+                sleep(1)
+
+            elif choise == '0':
                 break
             else:
                 print('输入有误！')
                 sleep(1)
+
+    #处理课表，并打印
+    def day_classes(self,day):
+        num = 0
+        clas = []
+        if day==8:
+            day=1
+        #判断今天课有无
+        for i in self.end_all_classes[day - 1]:
+            if i == None:
+                num += 1
+                if num == 5:
+                    break
+                continue
+            clas.append(i)
+        if num != 5:
+            if self.week_day == day:
+                print('今天的课表：')
+            elif self.week_day+1 == day:
+                print('明天的课表：')
+            else:
+                print('星期' + str(day) + '的课表：')
+            #打印课表
+            for i in clas:
+                self.print_classes(i)
+        else:
+            if self.week_day == day:
+                print('今天没课')
+            elif self.week_day + 1 == day:
+                print('明天没课')
+            else:
+                print('星期' + str(day) + '没课')
+
+
+    def print_classes(self,i):
+        print('课程：' + i[0])
+        print('时间：' + i[1])
+        print('地点：' + i[2])
+        print('周次：' + i[3])
+        print('星期：' + i[4])
+        print('    --------------------')
+
 
     def main(self):
         #   创建一个对象，规避检测，并加上无头浏览器（照抄）
@@ -236,18 +277,21 @@ class Spider:
         # option.add_experimental_option('excludeSwitches', ['enable-automation'])
         # #控制chrome以无界面模式打开
         # option.add_argument('--headless')
+        # #谷歌文档提到需要加上这个属性来规避bug
         # option.add_argument('--disable-gpu')
         # print('加载中...')
         # #实例化一个浏览器对象(executable_path是浏览器驱动路径，options是规避检测参数+无头浏览器参数)
-        # #self.bro = webdriver.Chrome(executable_path='./chromedriver.exe',options=option)
+        # self.bro = webdriver.Chrome(executable_path='./chromedriver.exe',options=option)
+
         #让浏览器发起一个指定url对应请求
-        self.bro.get('http://125.216.100.10:2888/jsxsd/')#url
-        print('----------------------------')
+        self.bro.get('http://125.216.100.10:2888/jsxsd/') #url
+        print('------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
         #等待加载
         sleep(0.5)
         #获取账号密码标签
         self.username = self.bro.find_element_by_id('userAccount')
         self.password = self.bro.find_element_by_id('userPassword')
+        self.code = self.bro.find_element_by_css_selector('#RANDOMCODE')
         self.login()
         # 获取名字
         print('憨批', self.bro.find_element_by_xpath('/html/body/div[1]/div[2]/ul/li[5]/span').get_attribute('textContent'))
